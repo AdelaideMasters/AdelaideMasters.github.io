@@ -5,10 +5,13 @@
   <title>Swim Fee Calculator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --AM-light-blue: #00a4bd;
+      --AM-dark-blue: #24326c;
+    }
     .header {
       display: flex;
       align-items: center;
-      gap: 12px;
       justify-content: center;
     }
     .logo {
@@ -19,53 +22,83 @@
     body {
       font-family: system-ui, sans-serif;
       max-width: 600px;
-      margin: 4em auto;
+      margin: 2em auto;
       padding: 1em;
       line-height: 1.6;
       color: #333;
-    }
-    h1 {
-      text-align: center;
-      font-size: 2.4em;
     }
     .intro-line {
       font-size: 1em;
       font-weight: bold;
       color: #333;
-      text-align: center;       /* centers inline content */
-      margin-left: auto;        /* center the block itself */
+      text-align: center;
+      margin-left: auto;
       margin-right: auto;
-      width: fit-content;       /* shrink-wrap to content */
+      width: fit-content;
     }
-    .input-row {
+    .balance-input {
       display: flex;
-      justify-content: center;     /* centers the row horizontally */
-      align-items: flex-start;     /* aligns input-groups to the top */
-      gap: 5rem;                   /* space between input-groups */
-      margin: 2rem auto;           /* auto left/right centers the block itself */
-      width: fit-content;          /* shrink-wrap to contents (so centering works visually) */
+      justify-content: center;
+      align-items: center;
+      margin-top: 1.2em;
+      margin-bottom: 3.5em;
     }
-    .input-group {
+   .balance-input input:focus {
+      outline: 2px solid black;
+    }
+    .balance-input-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .balance-input-wrapper input {
+      padding: 0.5em 0.5em 0.5em 1em; /* top, right, bottom, left */
+      width: 6ch;
+      font-size: 1.1em;
+      border: 1px solid black;
+      border-radius: 6px;
+      text-align: center;
+      font-family: inherit;
+    }
+    .balance-input-wrapper .dollar-sign {
+      position: absolute;
+      left: 0.5em;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1em;
+      font-weight: 500;
+      pointer-events: none;
+      color: #333;
+    }
+    .swim-input-row {
       display: flex;
-      flex-direction: column;      /* label above input */
-      align-items: center;         /* center label + input within group */
+      justify-content: center;
+      align-items: flex-start;
+      gap: 5rem;
+      margin: 1.2rem auto;
+      width: fit-content;
     }
-    .input-group input {
+    .swim-input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .swim-input-group input {
       width: 6ch;
       padding: 0.5em;
       font-size: 1.1em;
-      border: 1px solid #00a4bd; /* AM light blue */
+      border: 1px solid var(--AM-light-blue);
       border-radius: 6px;
       text-align: center;
     }
+
+    .swim-input-group input:focus {
+      border: 1px solid var(--AM-light-blue);
+      outline: 2px solid var(--AM-light-blue);
+    }
+
     label {
       margin-bottom: 0.3em;
       font-weight: 500;
-    }
-    .divider {
-      font-size: 1.2em;
-      padding: 0 0.5em;
-      user-select: none;
     }
     .result-amount {
       font-size: 2em;
@@ -94,24 +127,35 @@
       display: none;
       font-size: 0.6em;
       line-height: 1;
-      padding: 0 0.2em;
+      padding: 0 0.4em 0 0.2em; /* top, right, bottom, left */
       height: 2em;
       align-items: center;
       justify-content: center;
       margin-left: 0.5em;
       cursor: pointer;
       border-radius: 4px;
-      color: #24326c; /* AM dark blue */
-      background-color: #00a4bd; /* AM light blue */
-      border: 1px solid #24326c; /* AM dark blue */
+      color: var(--AM-dark-blue);
+      background-color: var(--AM-light-blue);
+      border: 1px solid var(--AM-dark-blue);
+      transition: all 0.2s ease; 
     }
     .result-wrapper.result-amount #copyButton {
       display: inline-flex;
     }
-    #copyButton:hover {
-      color: #00a4bd; /* AM light blue */
-      background-color: #24326c; /* AM dark blue */
-      border: 1px solid #00a4bd; /* AM light blue */
+
+    @media (hover: hover) and (pointer: fine) {
+      #copyButton:hover {
+        color: var(--AM-light-blue);
+        background-color: var(--AM-dark-blue);
+        border: 1px solid var(--AM-light-blue);
+      }
+    }
+
+    /* same as hover */
+    #copyButton.copied {
+      color: var(--AM-light-blue);
+      background-color: var(--AM-dark-blue);
+      border: 1px solid var(--AM-light-blue);
     }
 
     @media (max-width: 480px) {
@@ -121,7 +165,7 @@
       }
 
       .result-wrapper #copyButton {
-        margin-left: 0;   /* undo default left margin */
+        margin-left: 0;
       }
     }
   </style>
@@ -131,22 +175,30 @@
     <img src="Adelaide-Masters-Swimming-logo.jpg" alt="Adelaide Masters Swimming" class="logo" />
   </div>
   <br />
+  <div class="intro-line">Current balance</div>
 
-  <div class="intro-line">How many future training sessions would you like to pay for?</div>
+  <div class="balance-input">
+    <div class="balance-input-wrapper">
+      <span class="dollar-sign">$</span>
+      <input type="text" id="b" inputmode="decimal" placeholder="0.00" autocomplete="off"/>
+    </div>
+  </div>
 
-  <div class="input-row">
-    <div class="input-group">
+  <div class="intro-line">Plan for how many sessions?</div>
+
+  <div class="swim-input-row">
+    <div class="swim-input-group">
       <label for="n1">St Peter's</label>
       <input type="text" id="n1" inputmode="numeric" pattern="[0-9]*" placeholder="# swims" autocomplete="off"/>
     </div>
-    <div class="input-group">
+    <div class="swim-input-group">
       <label for="n2">Burnside</label>
       <input type="text" id="n2" inputmode="numeric" pattern="[0-9]*" placeholder="# swims" autocomplete="off" />
     </div>
   </div>
   <div class="result-wrapper" id="result-wrapper">
     <div id="result"></div>
-    <button id="copyButton" title="Copy total owing amount to clipboard" aria-label="Copy total owing amount to clipboard">Copy</button>
+    <button id="copyButton" title="Copy payment due amount to clipboard" aria-label="Copy payment due amount to clipboard">📋 Copy</button>
   </div>
 
   <br />
@@ -156,6 +208,7 @@
   <div class="explanation" id="explanation2"></div>
 
   <script>
+    const bInput = document.getElementById("b");
     const n1Input = document.getElementById("n1");
     const n2Input = document.getElementById("n2");
     const resultWrapper = document.getElementById("result-wrapper");
@@ -166,38 +219,67 @@
     const c1 = 12.73; // cost for each St Peter's Swim
     const c2 = 6.82; // cost for each Burnside swim
 
-    function getKFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      const kRaw = parseFloat(params.get("balance"));
-      return isNaN(kRaw) ? 0 : kRaw;
+    function valueIsDecimalCurrency(v)
+    {
+      return /^-?\d*(\.\d{0,2})?$/.test(v);
     }
+
+    function formatBalanceInput() {
+      const n = parseFloat(bInput.value);
+
+      const newV = (isNaN(n) || (n === 0)) ? `` : `${n.toFixed(2)}`;
+
+      if (bInput.value !== newV) {
+        bInput.value = newV;
+        sessionStorage.setItem("b", newV);
+      }
+    }
+
+    function initialiseB() {
+      const params = new URLSearchParams(window.location.search);
+
+      const bValue = params.get("balance");
+
+      const bRaw = parseFloat(bValue);
+
+      if (!isNaN(bRaw) && valueIsDecimalCurrency(bRaw))
+      {
+        bInput.value = bRaw;
+        formatBalanceInput();
+        sessionStorage.setItem("b", bInput.value);
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    initialiseB();
 
     function formatCurrency(value) {
       return `$${value.toFixed(2)}`;
     }
 
     function updateResult() {
+      const b = parseFloat(bInput.value) || 0;
       const n1 = parseFloat(n1Input.value) || 0;
       const n2 = parseFloat(n2Input.value) || 0;
-      const k = getKFromURL();
 
       const cost_of_swims = c1 * n1 + c2 * n2;
 
-      const result =  -k + cost_of_swims;
+      const result =  -b + cost_of_swims;
 
       resultWrapper.classList.remove("result-amount", "result-sentence");
 
       if (result > 0) {
         resultWrapper.classList.add("result-amount");
-        resultDisplay.textContent = `Total owing: ` + formatCurrency(result);
+        resultDisplay.textContent = `Payment due: ` + formatCurrency(result);
 
-        explanation1.textContent = `Total owing = -(current balance)`;
+        explanation1.textContent = `Payment due = -(current balance)`;
 
-        if (k > 0) {
-          explanation2.textContent = `= -\$${k}`;
+        if (b > 0) {
+          explanation2.textContent = `= -\$${b}`;
         }
         else {
-          explanation2.textContent = `= \$${-k}`;
+          explanation2.textContent = `= \$${-b}`;
         }
 
         if (n1 > 0) {
@@ -217,26 +299,26 @@
         resultWrapper.classList.add("result-sentence");
         resultDisplay.textContent = `Nothing owing, and no new swims to pay for... 🤔`;
 
-        explanation1.textContent = `Your current balance = ` + formatCurrency(k);
+        explanation1.textContent = ``;
         explanation2.textContent = ``;
       }
       else {
         resultWrapper.classList.add("result-sentence");
         resultDisplay.textContent = `You already have enough in your balance for that. 🙂`;
 
-        explanation1.textContent = `(Your current balance) ` + formatCurrency(k);
+        explanation1.textContent = `(Your current balance) ` + formatCurrency(b);
 
         if (result == 0) {
           explanation1.textContent += ` = `;
         }
         else
         {
-          explanation1.textContent += ` > `;
+          explanation1.textContent += ` ＞ `;
         }
 
-        explanation1.textContent += formatCurrency(cost_of_swims) + ` (Cost of swims)`
+        explanation1.textContent += formatCurrency(cost_of_swims) + ` (Cost of swims)`;
 
-        explanation2.textContent = `Cost of swims = `
+        explanation2.textContent = `Cost of swims = `;
 
         if (n1 > 0) {
           explanation2.textContent += `${n1} x \$${c1}`;
@@ -250,6 +332,10 @@
           explanation2.textContent += `${n2} x \$${c2}`;
         }
       }
+
+      sessionStorage.setItem("b", bInput.value);
+      sessionStorage.setItem("n1", n1Input.value);
+      sessionStorage.setItem("n2", n2Input.value);
     }
 
     function blockNonDigits(e) {
@@ -267,18 +353,108 @@
       }
     }
 
-    function sanitizePaste(e) {
+    function blockNonDecimals(e) {
+      // Allow control/meta keys and navigational keys
+      if (
+        e.ctrlKey || e.metaKey ||
+        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
+      ) {
+        return;
+      }
+
+      const input = e.target;
+      const value = input.value;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      const leftOfSelection = value.slice(0, start);
+      const rightOfSelection = value.slice(end);
+
+      // Simulate the new value after this keypress
+      const newValue = leftOfSelection + e.key + rightOfSelection;
+
+      // Allow digits
+      if (/^\d$/.test(e.key)) {
+        const [_, fraction = ''] = newValue.split('.');
+        if (newValue.includes('.') && fraction.length > 2) {
+          e.preventDefault(); // block if more than 2 decimal places
+        }
+        return;
+      }
+
+      // Allow one '.' only if it doesn't already exist (ignoring selected text)
+      if (e.key === '.' && !leftOfSelection.includes('.') && !rightOfSelection.includes('.')) {
+        return;
+      }
+
+      // Allow '-' only at beginning and only if not already present
+      if (e.key === '-') {
+        if (start === 0 && !leftOfSelection.includes('-') && !rightOfSelection.includes('-')) {
+          return;
+        }
+      }
+
+      // Block everything else
+      e.preventDefault();
+    }
+
+    function sanitiseIntigerPaste(e) {
       const pasted = (e.clipboardData || window.clipboardData).getData('text');
       if (!/^\d+$/.test(pasted)) {
         e.preventDefault();
       }
     }
 
+    function sanitiseDecimalPaste(e) {
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+
+      // Get current value and cursor position
+      const input = e.target;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      // Simulate the value after paste
+      const nextValue = input.value.slice(0, start) + pasted + input.value.slice(end);
+
+      // Validate that it matches an optional '-' at start, followed by digits,
+      // optionally one '.', and up to 2 decimal digits
+      if (!valueIsDecimalCurrency(nextValue)) {
+        e.preventDefault();
+      }
+    }
+
+    function dropLeadingZeros(input, key) {
+      const value = input.value;
+
+      const newValue = value.replace(/^0+/, '');
+
+      if (value !== newValue) {
+        input.value = newValue;
+        sessionStorage.setItem(key, newValue);
+      }
+    }
+
     [n1Input, n2Input].forEach(input => {
       input.addEventListener("keydown", blockNonDigits);
-      input.addEventListener("paste", sanitizePaste);
+      input.addEventListener("paste", sanitiseIntigerPaste);
       input.addEventListener("input", updateResult);
     });
+
+    n1Input.addEventListener('blur', () => dropLeadingZeros(n1Input, "n1"));
+    n2Input.addEventListener('blur', () => dropLeadingZeros(n2Input, "n2"));
+
+    bInput.addEventListener("keydown", blockNonDecimals);
+    bInput.addEventListener("paste", sanitiseDecimalPaste);
+    bInput.addEventListener("input", updateResult);
+    bInput.addEventListener('blur', formatBalanceInput);
+
+    const savedB = sessionStorage.getItem("b");
+    const savedN1 = sessionStorage.getItem("n1");
+    const savedN2 = sessionStorage.getItem("n2");
+
+    if (savedB !== null) bInput.value = savedB;
+    if (savedN1 !== null) n1Input.value = savedN1;
+    if (savedN2 !== null) n2Input.value = savedN2;
 
     // Initial calculation
     updateResult();
@@ -291,9 +467,12 @@
         navigator.clipboard.writeText(valueToCopy).then(() => {
           const button = document.getElementById("copyButton");
           const originalText = button.textContent;
-          button.textContent = "Copied!";
-          // button.style.color = "0x00a4bd"; // Doesn't work  =(
-          setTimeout(() => button.textContent = originalText, 1000);
+          button.textContent = "✓ Copied!";
+          button.classList.add("copied");
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove("copied");
+          }, 1000);
         }).catch(() => {
           alert("Copy failed");
         });
